@@ -1,0 +1,154 @@
+<html>
+    <head>
+        
+        <style type="text/css">
+            table {
+                font-size: 10px;
+
+                border-style: solid;
+                border-color: gray;
+                border-collapse: collapse;
+                border-width: 1px;
+                width:1500px;
+                text-align: left;
+            }
+            tr {
+                border-style: solid;
+                border-width: 1px;
+                height: 25px;
+            }
+            td.timeLineTd {
+                border-left-style: solid;
+                
+            }
+            td.keyTd{
+                text-align: left;
+            }
+            td.spreadTd{
+                
+            }
+            div.timeLine {
+                background-color: ee8888;
+                height:20px;
+            }
+            div.toolTip{
+                position: absolute;
+                z-index: 999;
+                font-size: 10px;
+                border-style: solid;
+                border-width: 1px;
+                background-color: aaaaee;
+            }
+
+        </style>
+        <script type="text/javascript">
+            var treeRelation = new Array();
+            var rowIndex=0;
+            var allCalls= new Array();
+            var maxTime=$maxTime$;
+            var minSTime=$minSTime$;
+            //var jsonData='[{"key":"com.renren.test.App#method1","stime":0,"etime":18000000,"line":305,"subCalls":[{"key":"com.renren.test.App#method2","stime":1000000,"etime":15000000,"line":372,"subCalls":[{"key":"org.apache.commons.Lang.StringUtils#subString","stime":2000000,"etime":4000000,"line":2127,"subCalls":[{"key":"java.lang.String#subString","stime":2500000,"etime":3000000,"line":76,"subCalls":[]}]},{"key":"com.renren.test.App#method3","stime":4500000,"etime":13500000,"line":501,"subCalls":[]},]},{"key":"com.renren.test.Hana#testMed","stime":15000000,"etime":17000000,"line":15,"subCalls":[]}]}]';
+            var jsonData="[$callData$]";
+            function prepareData(){
+                if(maxTime<=0){
+                    maxTime=1;
+                }
+                 var tree = eval('('+jsonData+')');
+                 var htmlStr=prepareCalls(tree,"");
+                 var table= document.getElementById("timeLineTable");
+                 table.innerHTML=htmlStr;
+            }
+
+            function prepareCalls(calls,prefix){
+                var htmlStr="";
+                var nextPrefix
+                if(prefix==""){
+                    //Not the first level
+                    nextPrefix="|---";
+                }else{
+                    nextPrefix="&nbsp;&nbsp;&nbsp;&nbsp;"+prefix;
+                }
+                for(var i in calls){
+                    allCalls.push({"directChildren":calls[i]["subCalls"].length,"stime":calls[i]["stime"],"etime":calls[i]["etime"]});
+                    htmlStr+="<tr><td style='spreadTd' onClick='onSpreadClick("+rowIndex+");'>-</td><td style='keyTd'>"+prefix+"#"+calls[i]["line"]+":"+calls[i]["key"]+"</td><td class='timeLineTd'><div onMouseover='onTimelineOverIn(event,"+rowIndex+");' onMouseout='onTimelineOverOut();' class='timeLine' style='margin-left:"+getSpanStart(calls[i]["stime"])+"px;width:"+getSpanWidth(calls[i]["etime"]-calls[i]["stime"])+"px'><span>"+(calls[i]["etime"]-calls[i]["stime"])+"ms</span></div></td></tr>";
+                    var curIndex=rowIndex;
+                    rowIndex+=1;
+                    treeRelation.push(0);
+                    if(calls[i]["subCalls"].length>0){
+                        htmlStr+=prepareCalls(calls[i]["subCalls"],nextPrefix);
+                    }
+                    treeRelation[curIndex]=rowIndex-1;
+                }
+                return htmlStr;
+            }
+
+            function getSpanWidth(time){
+                return time/maxTime*1000;
+            }
+            function getSpanStart(stime){
+                return (stime-minSTime)/maxTime*1000;
+            }
+            
+            
+            function onTimelineOverIn(ev,rowNum){
+                var directSubCalls=allCalls[rowNum]["directChildren"];
+                var totalSubCalls=treeRelation[rowNum]-rowNum;
+                var stime=allCalls[rowNum]["stime"];
+                var etime=allCalls[rowNum]["etime"];
+                var toolTip= document.getElementById("toolTip");
+                toolTip.innerHTML="direct:"+directSubCalls+",total:"+totalSubCalls+",start:"+stime+",end:"+etime;
+                toolTip.style.display="";
+                toolTip.style.left=ev.clientX+document.body.scrollLeft+document.documentElement.scrollLeft+"px";
+                toolTip.style.top=ev.clientY+document.body.scrollTop+document.documentElement.scrollTop+"px";
+
+            }
+            function onTimelineOverOut(){
+                var toolTip= document.getElementById("toolTip");
+                toolTip.style.display="none";
+
+            }
+            function onSpreadClick(rowNum){
+                var table= document.getElementById("timeLineTable");
+
+                if(table.rows[rowNum].cells[0].innerHTML=="+"){
+                    for(i=rowNum+1;i<=treeRelation[rowNum];i++){
+                        table.rows[i].style.display="";
+                    }
+                    table.rows[rowNum].cells[0].innerHTML = "-";
+
+                }else{
+                    for(var i=rowNum+1;i<=treeRelation[rowNum];i++){
+                        table.rows[i].style.display="none";
+                    }
+                    table.rows[rowNum].cells[0].innerHTML = "+";
+                }
+            }
+
+
+
+        </script>
+    </head>
+    <body onLoad="prepareData();">
+        <div id="toolTip" class="toolTip" sytle="display:none;"></div>
+        <table id="timeLineTable">
+            <!--<tr>
+                <td onClick="onSpreadClick(0);">-</td>
+                <td>abc</td>
+
+                <td class="timeLineTd"><div class="timeLine"><span>150ms</span><div></td>
+            </tr>
+            <tr>
+                <td>-</td>
+                <td>|---aaaa</td>
+
+                <td></td>
+            </tr>
+            <tr>
+                <td>-</td>
+                <td>&nbsp;&nbsp;&nbsp;&nbsp;|---dfdfdf</td>
+
+                <td></td>
+            </tr>-->
+        </table>
+    </body>
+</html>
