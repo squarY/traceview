@@ -1,0 +1,1 @@
+java -cp target com.renren.traceview.ViewGenerator $1 $2 $3
