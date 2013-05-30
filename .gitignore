@@ -13,3 +13,7 @@ test.call
 tree.html
 
 trace.info
+
+.settings/org.eclipse.jdt.core.prefs
+
+.svn
