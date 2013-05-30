@@ -1,1 +1,1 @@
-btrace -cp lib:target $1 CallInfoOutput.java
+btrace -cp lib:$2 $1 CallInfoOutput.java
